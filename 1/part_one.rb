@@ -1,0 +1,1 @@
+puts File.read(ARGV[0]).split.map { |x| x.to_i }.inject :+
