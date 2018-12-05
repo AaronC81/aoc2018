@@ -51,6 +51,7 @@ entries.each do |entry|
     end
 end
 
+# Find the sleepiest guard and the minute they were asleep the most
 sleepiest_guard = minutes_of_sleep_per_guard.max_by { |k, v| v.values.sum }[0]
 sleepiest_guards_minute = minutes_of_sleep_per_guard[sleepiest_guard].max_by { |k, v| p k; p v }[0]
 
