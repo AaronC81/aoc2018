@@ -77,13 +77,14 @@ each_cell(rect) do |left, top|
 end
 
 # Count references to each point
-count = {}
+count = Hash.new(0)
 closest.each do |this_point, closest_point|
+    # Skip if we've said never to count this again
     next if count[closest_point] == -1
-    count[closest_point] ||= 0
+    
     count[closest_point] += 1
 
-    # Don't count if on edge
+    # Don't count if on edge, and never count again
     if this_point.left == rect.top_left.left \
         || this_point.top == rect.top_left.top \
         || this_point.top == rect.bottom_left.top \
