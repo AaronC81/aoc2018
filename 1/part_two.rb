@@ -1,6 +1,8 @@
-sequence = File.read(ARGV[0]).split.map { |x| x.to_i }
+require 'set'
 
-seen_before = []
+sequence = File.read(ARGV[0]).split.map { |x| x.to_i }
+seen_before = Set.new
+
 result = sequence.cycle.inject(0) do |a, b|
     result = a + b
     break result if seen_before.include? result
