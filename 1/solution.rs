@@ -23,11 +23,9 @@ fn find_first_dup_while_summing(items: &Vec<i32>) -> i32 {
     for item in items.iter().cycle() {
         current_sum += item;
         if sums_already_encountered.contains(&current_sum) {
-            println!("{}", counter);
             return current_sum;
         }
         sums_already_encountered.insert(current_sum);
-        counter += 1;
     }
 
     panic!();
