@@ -35,6 +35,7 @@ Point = Struct.new('Point', :left, :top) do
     alias inspect to_s
 end
 
+# A cart which may move around a Grid.
 class Cart
     attr_accessor :grid, :position, :direction, :next_intersection_action
 
@@ -46,8 +47,10 @@ class Cart
         @next_intersection_action = :turn_left
     end
 
+    # A Hash keyed by [current direction, character] describing which direction
+    # to change to after a move in a tick.
     def self.direction_lookup
-        lookup_table = {
+        {
             [:left,  '/']  => :down,
             [:up,    '/']  => :right,
             [:down,  '/']  => :left,
@@ -59,6 +62,7 @@ class Cart
         }
     end
 
+    # Simulate a tick of time by mutating this instance.
     def tick
         # Make the movement
         self.position = position.moved_in(direction)
@@ -116,12 +120,13 @@ class Grid
         raise "No point accessible with #{args.inspect}"
     end
 
+    # Scans over the grid and populates @carts with carts pointing in the right
+    # directions.
     def create_all_carts
         carts = []
 
         grid.length.times do |top|
             grid.first.length.times do |left|
-                #p "#{left},#{top} = #{self[left, top]} AND #{self[Point.new(left, top)]}"
                 next unless ['v', '^', '<', '>'].include?(self[left, top])
 
                 direction = {
@@ -135,9 +140,8 @@ class Grid
         carts
     end
 
+    # Draws the map as a string, with carts as "O" characters.
     def draw(string)
-        #return tracks.map { |track| track.cart.position.to_s }.join("\n\n\n")
-
         as_arr = string.split("\n")
 
         carts.each do |cart|
@@ -147,6 +151,11 @@ class Grid
         as_arr.join("\n")
     end
 
+    # Returns any single collision which has occured. Effectively, if this is
+    # not null, there has been some collision. There could be more than one,
+    # but this method will return only the first; to see them all, use
+    # #collisions.
+    # The collision is in the form [first cart, second cart].
     def collision
         carts.each do |cart_a|
             carts.each do |cart_b|                
@@ -159,6 +168,8 @@ class Grid
         nil
     end
 
+    # Returns any and all collisions as an array of arrays of the form
+    # [[first cart, second cart], ...].
     def collisions
         results = []
 
@@ -174,6 +185,7 @@ class Grid
     end
 end
 
+# Prints the solution for part one.
 def solve_part_one
     input = File.read(ARGV[0])
 
@@ -185,22 +197,25 @@ def solve_part_one
             grid.carts.each do |cart|
                 cart.tick
                 next unless grid.collision
-                p grid.collision
+                p grid.collision[0].position
                 throw :crash
             end
         end
     end
 end
 
+# Prints the solution for part two.
 def solve_part_two
     input = File.read(ARGV[0])
 
     grid = Grid.from_puzzle_input(input)
     grid.create_all_carts
 
-    ticks = 0
-
     until grid.carts.one?
+        # Deleting elements while iterating them really confuses Ruby by the
+        # looks of things; keep track of elements we need to delete using a 
+        # Set instead, ignoring them on future iterations then deleting at the
+        # end
         scheduled_for_deletion = Set.new
 
         grid.carts.each do |cart|
@@ -210,20 +225,17 @@ def solve_part_two
             next unless grid.collision
             colls = grid.collisions
 
-            #puts "Pre-delete: #{grid.carts.map { |x| x.position }.join(", ")}"
             colls.each do |coll|
                 scheduled_for_deletion << coll[0] << coll[1]
             end
-            #puts "Post-delete: #{grid.carts.map { |x| x.position }.join(", ")}"
         end
 
         scheduled_for_deletion.each do |deleted_cart|
             grid.carts.delete(deleted_cart)
         end 
 
+        # Re-sort the array following the deletions
         grid.carts.sort_by! { |c| c.position.top * 1000 + c.position.left }
-
-        ticks += 1
     end
 
     p grid.carts.first.position
