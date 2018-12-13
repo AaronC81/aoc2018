@@ -1,3 +1,5 @@
+require 'set'
+
 # A point on the grid, where the top-left is 0,0.
 Point = Struct.new('Point', :left, :top) do
     def self.direction_deltas
@@ -149,12 +151,26 @@ class Grid
         carts.each do |cart_a|
             carts.each do |cart_b|                
                 if cart_a.position == cart_b.position && cart_a != cart_b
-                    return cart_a.position
+                    return [cart_a, cart_b]
                 end
             end
         end
 
         nil
+    end
+
+    def collisions
+        results = []
+
+        carts.each do |cart_a|
+            carts.each do |cart_b|                
+                if cart_a.position == cart_b.position && cart_a != cart_b
+                    results << [cart_a, cart_b]
+                end
+            end
+        end
+
+        results
     end
 end
 
@@ -164,8 +180,6 @@ def solve_part_one
     grid = Grid.from_puzzle_input(input)
     grid.create_all_carts
 
-    ticks = 0
-
     catch :crash do
         loop do
             grid.carts.each do |cart|
@@ -174,8 +188,43 @@ def solve_part_one
                 p grid.collision
                 throw :crash
             end
-            ticks += 1
         end
     end
 end
 
+def solve_part_two
+    input = File.read(ARGV[0])
+
+    grid = Grid.from_puzzle_input(input)
+    grid.create_all_carts
+
+    ticks = 0
+
+    until grid.carts.one?
+        scheduled_for_deletion = Set.new
+
+        grid.carts.each do |cart|
+            next if scheduled_for_deletion.include? cart
+
+            cart.tick
+            next unless grid.collision
+            colls = grid.collisions
+
+            #puts "Pre-delete: #{grid.carts.map { |x| x.position }.join(", ")}"
+            colls.each do |coll|
+                scheduled_for_deletion << coll[0] << coll[1]
+            end
+            #puts "Post-delete: #{grid.carts.map { |x| x.position }.join(", ")}"
+        end
+
+        scheduled_for_deletion.each do |deleted_cart|
+            grid.carts.delete(deleted_cart)
+        end 
+
+        grid.carts.sort_by! { |c| c.position.top * 1000 + c.position.left }
+
+        ticks += 1
+    end
+
+    p grid.carts.first.position
+end
